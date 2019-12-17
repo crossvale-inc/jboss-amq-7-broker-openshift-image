@@ -423,7 +423,6 @@ parameters:
   displayName: broker.xml
   name: BROKER_XML
   value: |-
-    <!-- Remove this tag to enable custom configuration -->
     <?xml version='1.0'?>
     <!--
     Licensed to the Apache Software Foundation (ASF) under one
