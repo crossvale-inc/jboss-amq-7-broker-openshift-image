@@ -1,3 +1,28 @@
+= Crossvale customizable AMQ 72-1.3.GA broker templates
+
+IMPORTANT: This is a _vendor branch_ and *SHOULD NOT* be merged into any other
+           branch that matches an upstream branch.
+
+This branch tracks Crossvale-specific modifications to the Red Hat AMQ
+OpenShift templates to support customization of the _broker.xml_ Artemis
+configuration file.
+
+Client-specific modifications should reside in their own sub-branches.
+
+Certain customizations are not necessary (they are handled "automatically" by
+the upstream _launch.sh_ Docker ENTRYPOINT for the AMQ broker containers);
+refer to the appropriate version (tag) of _launch.sh_ in the upstream
+https://github.com/jboss-container-images/jboss-amq-7-broker-openshift-image[jboss-container-images/jboss-amq-7-broker-openshift-image]
+repository for details.
+
+It is strongly recommended that client deployments use a *tagged* commit
+corresponding to the appropriate upstream tag when installing templates.
+(For example, the initial set of FHB-specific modifications against Red Hat tag
+_72-1.3.GA_ exist in the the _72-1.3.GA-FHB-0_ tag in this repository.)
+
+NOTE: Original (upstream) README content follows.
+
+---
 # Red Hat AMQ 7.2.4 OpenShift container image
 
 NOTE: Extends link:https://github.com/jboss-container-images/jboss-amq-7-broker-image[Red Hat AMQ 7.2.4 container image]
