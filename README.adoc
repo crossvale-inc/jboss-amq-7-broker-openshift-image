@@ -9,6 +9,9 @@ configuration file.
 
 Client-specific modifications should reside in their own sub-branches.
 
+The customization path is as defined in
+https://access.redhat.com/solutions/4426521[Deploying AMQ 7 Broker with a Custom Broker Configuration Using Templates].
+
 Certain customizations are not necessary (they are handled "automatically" by
 the upstream _launch.sh_ Docker ENTRYPOINT for the AMQ broker containers);
 refer to the appropriate version (tag) of _launch.sh_ in the upstream
