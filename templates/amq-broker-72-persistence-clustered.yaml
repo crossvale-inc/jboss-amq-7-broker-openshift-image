@@ -286,6 +286,8 @@ objects:
             value: ${AMQ_ANYCAST_PREFIX}
           - name: AMQ_MULTICAST_PREFIX
             value: ${AMQ_MULTICAST_PREFIX}
+          - name: BROKER_XML
+            value: ${BROKER_XML}
           - name: POD_NAMESPACE
             valueFrom:
               fieldRef:
