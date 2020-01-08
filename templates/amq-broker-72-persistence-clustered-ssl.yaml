@@ -515,6 +515,7 @@ parameters:
 
     <configuration xmlns="urn:activemq"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns:xi="http://www.w3.org/2001/XInclude"
                    xsi:schemaLocation="urn:activemq /schema/artemis-configuration.xsd">
 
        <core xmlns="urn:activemq:core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -549,14 +550,14 @@ parameters:
 
           <!--
            This value was determined through a calculation.
-           Your system could perform 0.26 writes per millisecond
+           Your system could perform 3.73 writes per millisecond
            on the current journal configuration.
-           That translates as a sync write every 3800000 nanoseconds.
+           That translates as a sync write every 268000 nanoseconds.
 
            Note: If you specify 0 the system will perform writes directly to the disk.
-                 We recommend this to be 0 if you are using journalType=MAPPED and ournal-datasync=false.
+                 We recommend this to be 0 if you are using journalType=MAPPED and journal-datasync=false.
           -->
-          <journal-buffer-timeout>3800000</journal-buffer-timeout>
+          <journal-buffer-timeout>268000</journal-buffer-timeout>
 
 
           <!--
@@ -591,6 +592,10 @@ parameters:
 
 
 
+        <connectors>
+            <!-- Connector used to be announced through cluster connections and notifications -->
+            <connector name="artemis">tcp://${BROKER_IP}:61616</connector>
+        </connectors>
 
           <!-- how often we are looking for how many bytes are being used on the disk in ms -->
           <disk-scan-period>5000</disk-scan-period>
@@ -624,22 +629,37 @@ parameters:
              <!-- amqpCredits: The number of credits sent to AMQP producers -->
              <!-- amqpLowCredits: The server will send the # credits specified at amqpCredits at this low mark -->
 
-             <!-- Acceptor for every supported protocol -->
-             <acceptor name="artemis">tcp://${BROKER_IP}:61616?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=CORE,AMQP,STOMP,HORNETQ,MQTT,OPENWIRE;useEpoll=true;amqpCredits=1000;amqpLowCredits=300</acceptor>
+            <!-- Note: If an acceptor needs to be compatible with HornetQ and/or Artemis 1.x clients add
+                        "anycastPrefix=jms.queue.;multicastPrefix=jms.topic." to the acceptor url.
+                        See https://issues.apache.org/jira/browse/ARTEMIS-1644 for more information. -->
 
-             <!-- AMQP Acceptor.  Listens on default AMQP port for AMQP traffic.-->
-             <acceptor name="amqp">tcp://${BROKER_IP}:5672?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=AMQP;useEpoll=true;amqpCredits=1000;amqpMinCredits=300</acceptor>
+            <!-- Acceptor for every supported protocol -->
+            <acceptor name="artemis">tcp://${BROKER_IP}:61616?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=CORE,AMQP,STOMP,HORNETQ,MQTT,OPENWIRE;useEpoll=true;amqpCredits=1000;amqpLowCredits=300</acceptor>
 
-             <!-- STOMP Acceptor. -->
-             <acceptor name="stomp">tcp://${BROKER_IP}:61613?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=STOMP;useEpoll=true</acceptor>
+            <!-- AMQP Acceptor.  Listens on default AMQP port for AMQP traffic.-->
+            <acceptor name="amqp">tcp://${BROKER_IP}:5672?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=AMQP;useEpoll=true;amqpCredits=1000;amqpLowCredits=300</acceptor>
 
-             <!-- HornetQ Compatibility Acceptor.  Enables HornetQ Core and STOMP for legacy HornetQ clients. -->
-             <acceptor name="hornetq">tcp://${BROKER_IP}:5445?protocols=HORNETQ,STOMP;useEpoll=true</acceptor>
-
-             <!-- MQTT Acceptor -->
-             <acceptor name="mqtt">tcp://${BROKER_IP}:1883?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=MQTT;useEpoll=true</acceptor>
+            <acceptor name="artemis-ssl">tcp://${BROKER_IP}:61617?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=CORE,AMQP,STOMP,HORNETQ,MQTT,OPENWIRE;useEpoll=true;amqpCredits=1000;amqpLowCredits=300;connectionsAllowed=1000;sslEnabled=true;keyStorePath=${AMQ_KEYSTORE_TRUSTSTORE_DIR}/${AMQ_KEYSTORE};keyStorePassword=${AMQ_KEYSTORE_PASSWORD}</acceptor>
+            <acceptor name="amqp-ssl">tcp://${BROKER_IP}:5671?tcpSendBufferSize=1048576;tcpReceiveBufferSize=1048576;protocols=AMQP;useEpoll=true;amqpCredits=1000;amqpMinCredits=300;connectionsAllowed=1000;sslEnabled=true;keyStorePath=${AMQ_KEYSTORE_TRUSTSTORE_DIR}/${AMQ_KEYSTORE};keyStorePassword=${AMQ_KEYSTORE_PASSWORD}</acceptor>
 
           </acceptors>
+
+
+          <cluster-user>${AMQ_CLUSTER_USER}</cluster-user>
+
+          <cluster-password>${AMQ_CLUSTER_PASSWORD}</cluster-password>
+
+          <broadcast-groups>
+    <broadcast-group name="my-broadcast-group">          <jgroups-file>jgroups-ping.xml</jgroups-file>          <jgroups-channel>activemq_broadcast_channel</jgroups-channel>          <connector-ref>artemis</connector-ref>       </broadcast-group>
+          </broadcast-groups>
+
+          <discovery-groups>
+    <discovery-group name="my-discovery-group">          <jgroups-file>jgroups-ping.xml</jgroups-file>          <jgroups-channel>activemq_broadcast_channel</jgroups-channel>          <refresh-timeout>10000</refresh-timeout>       </discovery-group>
+          </discovery-groups>
+
+          <cluster-connections>
+    <cluster-connection name="my-cluster">          <connector-ref>artemis</connector-ref>          <retry-interval>1000</retry-interval>          <retry-interval-multiplier>2</retry-interval-multiplier>          <max-retry-interval>32000</max-retry-interval>          <initial-connect-attempts>20</initial-connect-attempts>        <reconnect-attempts>10</reconnect-attempts>          <use-duplicate-detection>true</use-duplicate-detection>          <message-load-balancing>ON_DEMAND</message-load-balancing>          <max-hops>1</max-hops>          <discovery-group-ref discovery-group-name="my-discovery-group"/>       </cluster-connection>
+          </cluster-connections>
 
 
           <security-settings>
@@ -675,6 +695,7 @@ parameters:
              </address-setting>
              <!--default for catch all-->
              <address-setting match="#">
+                <redistribution-delay>0</redistribution-delay>
                 <dead-letter-address>DLQ</dead-letter-address>
                 <expiry-address>ExpiryQueue</expiry-address>
                 <redelivery-delay>0</redelivery-delay>
@@ -702,6 +723,21 @@ parameters:
              </address>
 
           </addresses>
+
+
+          <!-- Uncomment the following if you want to use the Standard LoggingActiveMQServerPlugin pluging to log in events
+          <broker-plugins>
+            <broker-plugin class-name="org.apache.activemq.artemis.core.server.plugin.impl.LoggingActiveMQServerPlugin">
+                <property key="LOG_ALL_EVENTS" value="true"/>
+                <property key="LOG_CONNECTION_EVENTS" value="true"/>
+                <property key="LOG_SESSION_EVENTS" value="true"/>
+                <property key="LOG_CONSUMER_EVENTS" value="true"/>
+                <property key="LOG_DELIVERING_EVENTS" value="true"/>
+                <property key="LOG_SENDING_EVENTS" value="true"/>
+                <property key="LOG_INTERNAL_EVENTS" value="true"/>
+            </broker-plugin>
+          </broker-plugins>
+          -->
 
        </core>
     </configuration>
